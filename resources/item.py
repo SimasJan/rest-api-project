@@ -2,10 +2,10 @@ import uuid
 from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
-import sys
-sys.path.append('main')
+from models import ItemModel
+from db import db
+from sqlalchemy.exc import SQLAlchemyError
 from schemas import ItemSchema, ItemUpdateSchema
-from db import items
 
 blp = Blueprint("Items", __name__, description="Operations on items.")
 
@@ -14,28 +14,18 @@ class Item(MethodView):
 
     @blp.response(200, ItemSchema)
     def get(self, item_id):
-        try: 
-            return items[item_id]
-        except KeyError:
-            abort(404, message="Item not found.")
+        item = ItemModel.query.get_or_404(item_id)
+        return item
 
-    def delete(self, item_id):
-        try:
-            del items[item_id]
-            return {"message": "Item deleted."}
-        except KeyError:
-            abort(404, message="Item not found.")
-    
+    def delete(self, item_id):    
+        item = ItemModel.query.get_or_404(item_id)
+        raise NotImplementedError("Deleting an item is not implemented.")
+
     @blp.arguments(ItemUpdateSchema)
     @blp.response(200, ItemSchema)
     def put(self, item_data, item_id):
-        try:
-            item = items[item_id]
-            item |= item_data
-            return item
-        except KeyError:
-            abort(404, message="Item not found.")
-
+        item = ItemModel.query.get_or_404(item_id)
+        raise NotImplementedError("Updating an item is not implemented.")
 
 @blp.route('/item')
 class ItemList(MethodView):
@@ -48,14 +38,12 @@ class ItemList(MethodView):
     @blp.response(201, ItemSchema)
     def post(self, item_data):
         """item_data is validated by the ItemSchema and passed through method only then."""
-        for item in items.values():
-            if (
-                item_data['name'] == items['name']
-                and item_data['store_id'] == items['store_id']
-            ):
-                abort(400, message="Item already exists.")
+        item = ItemModel(**item_data) 
+        
+        try:
+            db.session.add(item) # add many, undo (rollback), edit
+            db.session.commit()  # commit once
+        except SQLAlchemyError:
+            abort(500, message="An error occured while inserting the item in the database.")
 
-        item_id = uuid.uuid4().hex
-        item = {**item_data, "id": item_id} # include id in the dict
-        items[item_id] = item
         return item

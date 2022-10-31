@@ -1,5 +1,3 @@
-# import sys
-# sys.path.append('main')
 from db import db
 
 class ItemModel(db.Model):

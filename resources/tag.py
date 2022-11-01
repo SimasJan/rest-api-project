@@ -3,6 +3,7 @@ from flask_smorest import Blueprint, abort
 from models import ItemModel
 from schemas import TagSchema
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from flask_jwt_extended import jwt_required
 
 from db import db
 from models import StoreModel, TagModel
@@ -18,6 +19,7 @@ class TagInStore(MethodView):
         store = StoreModel.query.get_or_404(store_id)
         return store.tags.all()
     
+    @jwt_required()
     @blp.arguments(TagSchema)
     @blp.response(201, TagSchema)
     def post(self, tag_data, store_id):
@@ -38,6 +40,8 @@ class TagInStore(MethodView):
 
 @blp.route('/item/<int:item_id>/tag/<int:tag_id>')
 class LinkTagsToItem(MethodView):
+    
+    @jwt_required()
     @blp.response(201, TagSchema)
     def post(self, item_id, tag_id):
         """Link a tag to the item by IDs. Responds with TagSchema."""
@@ -52,6 +56,7 @@ class LinkTagsToItem(MethodView):
             abort(500, message="An error occured while sending a post request: {}".format(e))
         return tag
 
+    @jwt_required()
     @blp.response(200, TagAndItemSchema)
     def delete(self, item_id, tag_id):
         """Link a tag to the item by IDs. Responds with TagSchema."""
@@ -74,6 +79,7 @@ class Tag(MethodView):
         tag = TagModel.query.get_or_404(tag_id)
         return tag
 
+    @jwt_required()
     @blp.response(202, TagSchema, description="Deletes a tag if no item is tagged with it.", example={"message": "Tag deleted."})
     @blp.alt_response(404, description="Tag not found.")
     @blp.alt_response(400, description="Returned if the tag is assigned to one or more items. In this case, the tag is not deleted.")

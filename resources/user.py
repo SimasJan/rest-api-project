@@ -3,7 +3,7 @@ from venv import create
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from passlib.hash import pbkdf2_sha256
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, jwt_required
 
 from db import db
 from models import UserModel
@@ -15,6 +15,7 @@ blp = Blueprint("Users", "users", description="Operations on users.")
 class UserRegister(MethodView):
     
     # @blp.response(201, UserSchema)
+    @jwt_required()
     @blp.arguments(UserSchema)
     def post(self, user_data):
         # if there is at least 1 row, abort the request.
@@ -51,6 +52,7 @@ class User(MethodView):
         user = UserModel.query.get_or_404(user_id)
         return user
 
+    @jwt_required()
     @blp.response(200, UserSchema)
     def delete(self, user_id):
         user = UserModel.query.get_or_404(user_id)

@@ -2,6 +2,7 @@ import uuid
 from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
+from flask_jwt_extended import jwt_required
 
 from models import StoreModel
 from schemas import StoreSchema
@@ -17,6 +18,7 @@ class Store(MethodView):
         store = StoreModel.query.get_or_404(store_id)
         return store
 
+    @jwt_required() #? you can call this endpoint unless you pass the access token
     def delete(self, store_id):
         store = StoreModel.query.get_or_404(store_id)
         db.session.delete(store)
@@ -29,6 +31,7 @@ class StoreList(MethodView):
     def get(self):
         return StoreModel.query.all()
 
+    @jwt_required() #? you can call this endpoint unless you pass the access token
     @blp.arguments(StoreSchema)
     @blp.response(200, StoreSchema)
     def post(self, store_data):

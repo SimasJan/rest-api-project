@@ -4,6 +4,7 @@ from xmlrpc.client import Boolean
 from flask import Flask, jsonify
 from flask_smorest import Api
 from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate
 
 from resources.item import blp as ItemBlueprint
 from resources.store import blp as StoreBlueprint
@@ -21,6 +22,7 @@ def create_app():
     app = Flask(__name__)
     app.config.update(**configs.APP_CONFIGS)
     db.init_app(app)
+    migrate = Migrate(app, db) #? for migrations
 
     api = Api(app)
     jwt = JWTManager(app)

@@ -3,7 +3,8 @@ from venv import create
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from passlib.hash import pbkdf2_sha256
-from flask_jwt_extended import create_access_token, jwt_required
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt
+from blocklist import BLOCKLIST
 
 from db import db
 from models import UserModel
@@ -14,8 +15,6 @@ blp = Blueprint("Users", "users", description="Operations on users.")
 @blp.route('/register')
 class UserRegister(MethodView):
     
-    # @blp.response(201, UserSchema)
-    @jwt_required()
     @blp.arguments(UserSchema)
     def post(self, user_data):
         # if there is at least 1 row, abort the request.
@@ -43,6 +42,16 @@ class UserLogin(MethodView):
             return {'access_token': acces_token}
 
         abort(401, message="Invalid credentials provided.")
+
+
+@blp.route('/logout')
+class UserLogout(MethodView):
+    @jwt_required()
+    def post(self):
+        """Logout the user from the session."""
+        jti = get_jwt()['jti']
+        BLOCKLIST.add(jti)
+        return {'message': 'Successfully logged out.'}
 
 
 @blp.route('/user/<int:user_id>')

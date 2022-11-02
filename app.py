@@ -4,6 +4,7 @@ from xmlrpc.client import Boolean
 from flask import Flask, jsonify
 from flask_smorest import Api
 from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate
 
 from resources.item import blp as ItemBlueprint
 from resources.store import blp as StoreBlueprint
@@ -21,22 +22,24 @@ def create_app():
     app = Flask(__name__)
     app.config.update(**configs.APP_CONFIGS)
     db.init_app(app)
+    migrate = Migrate(app, db) #? for migrations
 
     api = Api(app)
     jwt = JWTManager(app)
 
+    # -- tokens
     @jwt.token_in_blocklist_loader
     def check_if_token_in_blocklist(jwt_header, jwt_payload) -> Boolean:
         """Checks if the token is in the blocklist."""
         return jwt_payload['jti'] in BLOCKLIST
 
-    @jwt.additional_claims_loader
-    def add_claims_to_jwt(identity) -> Dict:
-        """Returns whether the identity of the user is_admin or not. """
-        # Look into the database and see whether the user is an admin
-        if identity == 1:
-            return {'is_admin': True}
-        return {'is_admin': False}
+    @jwt.revoked_token_loader
+    def revoked_token_callback(jwt_header, jwt_payload):
+        return jsonify({'description': 'The token has been revoked.', 'error': 'token_revoked'}), 401
+
+    @jwt.needs_fresh_token_loader
+    def token_not_fresh_callback(jwt_header, jwt_payload):
+        return jsonify({'description': 'The token is not fresh.', 'error': 'fresh_token_required'}), 401
 
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload) -> Dict:
@@ -52,6 +55,14 @@ def create_app():
     def missing_token_callback(error) -> Dict:
         """When no access token is provided."""
         return jsonify({'description': 'Request does not contain an access token.', 'error': 'authorization_required'}), 401
+
+    @jwt.additional_claims_loader
+    def add_claims_to_jwt(identity) -> Dict:
+        """Returns whether the identity of the user is_admin or not. """
+        # Look into the database and see whether the user is an admin
+        if identity == 1:
+            return {'is_admin': True}
+        return {'is_admin': False}
 
     # create db tables if not exists.
     with app.app_context():

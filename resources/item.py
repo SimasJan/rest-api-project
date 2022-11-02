@@ -61,7 +61,7 @@ class ItemList(MethodView):
     def get(self):
         return ItemModel.query.all()
 
-    @jwt_required() #? you can call this endpoint unless you pass the access token
+    @jwt_required(fresh=True) #? you can call this endpoint unless you pass the access token
     @blp.arguments(ItemSchema)
     @blp.response(201, ItemSchema)
     def post(self, item_data):

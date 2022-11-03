@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv() # load the .env files
 
 APP_CONFIGS = {
     'PROPAGATE_EXCEPTIONS': True,
@@ -8,7 +11,7 @@ APP_CONFIGS = {
     'OPENAPI_URL_PREFIX': '/',
     'OPENAPI_SWAGGER_UI_PATH': '/swagger-ui',
     'OPENAPI_SWAGGER_UI_URL': 'https://cdn.jsdelivr.net/npm/swagger-ui-dist/',
-    'SQLALCHEMY_DATABASE_URI': os.getenv("DATABASE_URL", 'sqlite:///data.db'),
+    'SQLALCHEMY_DATABASE_URI': os.getenv("DATABASE_URL"),
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
     'JWT_SECRET_KEY':'S0m3V3ryS3cr3tK3y#1'
 }
